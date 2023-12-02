@@ -40,6 +40,18 @@ db.on('error', () => {
 })
 
 
+app.post('/getProducts', async(req, res) => {
+        try{
+            const prodcutsList = await Products.find({});
+            res.send(prodcutsList);       
+        }
+        catch(error) {
+            console.log(error);
+            res.sendStatus(404)
+        }
+});
+
+
 app.listen(PORT, () => {
     console.log(`Server work on port ${PORT}`);
 })
