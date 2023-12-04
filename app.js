@@ -7,6 +7,7 @@ const app = express();
 const PORT = 8000;
 const bodyParser = require('body-parser');
 const Products = require('./modules/products-model');
+const BuyOrder = require('./modules/buyOrder-model');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -40,15 +41,47 @@ db.on('error', () => {
 })
 
 
-app.post('/getProducts', async(req, res) => {
+app.post('/getDates', async(req, res) => {
         try{
             const prodcutsList = await Products.find({});
-            res.send(prodcutsList);       
+            const buyOrdersList = await BuyOrder.find({});
+            res.send([prodcutsList,buyOrdersList]);       
         }
         catch(error) {
             console.log(error);
             res.sendStatus(404)
         }
+});
+
+
+app.post('/buyProducts', async(req, res) => {
+    const inputData = req.body.inputValues;
+    if(req.body.inputValues === ''){
+       
+    }else{
+        const data = {
+            name:req.body.itemName,
+            amount: inputData.amountInp,
+            price: inputData.priceInp,
+            deliveryPrice: inputData.deliveryPriceInp,
+            deliveryType: req.body.deliveryType,
+        }
+        try{
+                const newBuyOrder = BuyOrder(data);
+                newBuyOrder
+                .save()
+                .then((res) => {
+                    console.log(res);
+                });     
+        }
+        catch(error) {
+            console.log(error);
+            res.sendStatus(404)
+        }
+        let orderArr = await BuyOrder.find({});
+                res
+                .send(orderArr);    
+    }
 });
 
 
