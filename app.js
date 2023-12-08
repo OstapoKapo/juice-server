@@ -8,6 +8,7 @@ const PORT = 8000;
 const bodyParser = require('body-parser');
 const Products = require('./modules/products-model');
 const BuyOrder = require('./modules/buyOrder-model');
+const SellOrder = require('./modules/sellOrders-model');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -45,7 +46,8 @@ app.post('/getDates', async(req, res) => {
         try{
             const prodcutsList = await Products.find({});
             const buyOrdersList = await BuyOrder.find({});
-            res.send([prodcutsList,buyOrdersList]);       
+            const sellOrdersList = await SellOrder.find({});
+            res.send([prodcutsList,buyOrdersList,sellOrdersList]);       
         }
         catch(error) {
             console.log(error);
@@ -56,6 +58,7 @@ app.post('/getDates', async(req, res) => {
 
 app.post('/buyProducts', async(req, res) => {
     const inputData = req.body.inputValues;
+    const prodcutsList = await Products.find({});
     if(req.body.inputValues === ''){
        
     }else{
@@ -67,6 +70,12 @@ app.post('/buyProducts', async(req, res) => {
             deliveryType: req.body.deliveryType,
         }
         try{
+                for(let el of prodcutsList){
+                    if(el.name === data.name){
+                        el.amount = parseInt(el.amount) + parseInt(data.amount);
+                        await Products.updateOne({name: data.name}, {amount: el.amount})
+                    }
+                }
                 const newBuyOrder = BuyOrder(data);
                 newBuyOrder
                 .save()
@@ -83,6 +92,50 @@ app.post('/buyProducts', async(req, res) => {
                 .send(orderArr);    
     }
 });
+
+
+app.post('/sellProducts', async(req, res) => {
+    const inputData = req.body.inputValues;
+    const prodcutsList = await Products.find({});
+    if(req.body.inputValues === ''){
+       
+    }else{
+        const data = {
+            name:req.body.itemName,
+            amount: inputData.amountInp,
+            price: inputData.priceInp,
+            buyer: inputData.buyerInp
+        }
+        try{
+                for(let el of prodcutsList){
+                    if(el.name === data.name){
+                        if(el.amount >= data.amount){
+                            el.amount = parseInt(el.amount) - parseInt(data.amount);
+                            await Products.updateOne({name: data.name}, {amount: el.amount});
+                        }else{
+                            data.amount = el.amount
+                            el.amount = 0;
+                            await Products.updateOne({name: data.name}, {amount: el.amount});
+                        }
+                    }
+                }
+                const newSellOrder = SellOrder(data);
+                newSellOrder
+                .save()
+                .then((res) => {
+                    console.log(res);
+                });     
+        }
+        catch(error) {
+            console.log(error);
+            res.sendStatus(404)
+        }
+        let salesArr = await SellOrder.find({});
+                res
+                .send(salesArr);    
+    }
+});
+
 
 
 app.listen(PORT, () => {
